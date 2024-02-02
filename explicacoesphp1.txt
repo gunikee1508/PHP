@@ -1,0 +1,344 @@
+print_r -> print array.
+
+array multidimensional:
+<?php
+$carros[0][0] = 'GM';
+$carros[0][1] = 'Cobalt';
+$carros[0][2] = 'Camaro';
+
+$carros[1][0] = 'Ford';
+$carros[1][0] = 'Fiesta';
+$carros[1][1] = 'Eco Sport';
+print_r($carros);
+
+echo $carros[0][2];
+echo end($carros[1]); // esta funçao 'end' diz: traga o ultimo elemento dentro desta posição.
+?>
+
+<?php
+$pessoas = array();
+array_push($pessoas, array(
+'nome' => 'Luiz',
+'idade' => 20
+)); // espera adicionar qual o array alvo que voce adicione um item. no caso, quero adicionar no array '$pessoas' outro array.
+
+array_push($pessoas, array(
+    'nome' => 'Glaucio',
+    'idade' => 45
+));
+
+print_r($pessoas[0]['nome']); // mostraria 'Luiz'
+
+?>
+
+// Transformando array em JSON
+JSON é um tipo de arquivo que facilita a integraçao dos sistemas, entao tenho sistema em php, alguem em java, e posso gerar um JSON com meus dados e voce com o Java pode consumir essa informação. JSON economiza caracteres, é utilizado praticamente em qualquer linguagem. no JSON, eu pego as variáveis e serializo, ou seja, consigo vê-las no arquivo.
+
+JSON_encode -> para transformar array em JSON, e o contrário, que é pra transformar um JSON em array (JSON_decode);
+
+<?php
+$pessoas = array();
+array_push($pessoas, array(
+'nome' => 'Luiz',
+'idade' => 20
+)); // espera adicionar qual o array alvo que voce adicione um item. no caso, quero adicionar no array '$pessoas' outro array.
+
+array_push($pessoas, array(
+    'nome' => 'Glaucio',
+    'idade' => 45
+));
+
+$jsonEncode = json_encode($pessoas); // ele espera que voce passe um array para vc encodar ele. transformei array em json.
+echo $jsonEncode;
+
+echo '<pre>';
+
+$data = json_decode($jsonEncode, true); // transformei o json em array novamente. precisa colocar 'true', se não ele transforma o indice do subarray em object.
+var_dump($data);
+
+?>
+
+
+// Constantes e arrays Constantes
+<?php
+
+//Para criar uma constante, usemos a função 'define'
+define('SERVIDOR', '127.0.0.1'); // precisa passar 2 parametros, o primeiro é o nome da constante, e o segundo parametro é o valor que essa constante vai ter. uma convenção é usar constantes com letras maiusculas. lembrando que não pode usar espaços dentro do nome da constante.
+echo SERVIDOR; // pra mostrar, é a mesma coisa que variavel, com exceção do dólar. só tirar o dolar. 
+
+//Para fazer array constante:
+define("BANCO_DE_DADOS", [
+    '127.0.0.1',
+    'root',
+    'pass',
+    'teste' 
+], true); // basta usarmos os colchetes apos a definiçao do nome da constante para definir o array constante, no caso, definimos 1 array e seus indices são os requisitos para autenticação. colocamos 'true' pra permitir que chame se o nome do array constante estiver maiusculo ou não.
+
+print_r(BANCO_DE_DADOS);
+
+// veja outra constante:
+echo PHP_VERSION;
+
+echo '<br>';
+
+echo DIRECTORY_SEPARATOR; // uma constante bem utilizada, ele traz uma barra de diretorio
+
+?>
+
+// so usar no php.net pra ver as constantes pré definidas
+
+// SESSÕES
+variável local != variável de sessão
+
+a partir q o usuario acessa um site, é criada uma sessão entre o usuario e o servidor. qd vc acessa um site, tipo google, cria-se um arquivo temporario na sua maquina, e na maquina do servidor, então amarra as informações. 
+
+// arquivo chamado 'config.php'
+<?php
+session_start(); // a partir deste momento, as sessões estão funcionando.
+$_SESSION['nome'] = 'HCode'; // a session é um array super global. cria-se uma chave pra guardar um valor q vc queira.
+
+//em outro arquivo, agora:
+session_start();
+echo $_SESSION['nome'];
+
+// toda página em que voce usar sessão, tem que ter: session_start(); , é ideal que usemos um require.
+// em outro arquivo:
+require_once("config.php");
+echo $_SESSION['nome'];
+
+// Para destruir uma variavel de sessão, com nome:
+session_unset($_SESSION['nome']); // apaga so a variável de sessão 'nome'
+session_unset(); // vai apagar todas as variáveis de sessão
+
+temos também o session_destroy. mas, ql diferença entre session_unset e session_destroy? o session_destroy limpa a variavel e remove o usuario do site. se der F5, é como se fosse um novo acesso no servidor.
+
+?>
+
+
+///////
+ // ID De sessão
+
+ID de sessão é uma identificação unica no seu servidor. quem gera os IDs são o servidores. mas, como descobrir qual seu proprio ID? as vezes gera um cookie, temos tbm o session_storage que guarda no navegador, pra q qd vc volte, retorne as informações.
+
+
+<?php
+require_once('config.php');
+echo session_id; // vai mostrar seu ID de sessão. é sempre o mesmo ID de sessão enquanto vc estiver nesta sessão. este valor é unico entre voce e o servidor
+
+session_regenerate_id(); // aqui gera novo id de sessão sempre que voce dá F5 na página. se voce der var_dump($_SESSION), vai mostrar o array superglobal.
+
+// e para recuperar sua sessão? como faria?
+session_id('fgdg6d7f67gdf78'); aqui voce coloca a sessão que voce quer recuperar.
+
+?>
+
+/////////
+
+Funções para sessão
+para saber onde tá salvando a sessão, use:
+<?php
+require_once('config.php');
+echo session_save_path();
+
+// todas essas funçoes, dá pra ver no site do php em documentações
+var_dump(session_status()); // aqui ve-se o status da sessão
+
+/////////////////
+
+Criando funções de usuário-
+que é quando o usuario cria sua propria função, basicamente é quando voce tem oq pode ou n acontecer de forma bem especifica.
+toda funçao tem que retornar algo, senão retornar, é uma subrotina, isto é, uma rotina que voce reutiliza.
+
+<?php
+function ola(){
+
+    return 'Olá mundo!<br>';
+
+}
+echo ola(); // é ideal que voce use o return, e dizer que é q vc quer retornar na tela, apenas. se vc quisesse jogar num banco de dados, não apenas retornar na tela, ou guardar na variável.
+?>
+
+$frase = ola();
+echo strlen($frase); // eu tenho liberdade com o return, posso fazer exatamente o que eu quiser.
+
+<?php
+
+function salario() {
+    return 946.00;
+}
+
+echo 'José recebeu 3 salários: ". (salario);
+?>
+
+//////////
+
+Parametros na função
+<?php
+function ola($texto) {
+    return "Olá $texto";
+}
+
+echo ola("Lorem Ipsum"); // mostraria Olá Lorem Ipsum
+
+?>
+
+// pra dar um valor padrao e assim nao precisar ter q passar nada como parametro:
+<?php
+function ola($texto = Lorem Ipsum, $periodo="Bom dia") {
+    return "Olá $texto, $periodo";
+}
+
+echo ola(); // mostraria Olá Lorem Ipsum
+echo ola("", "Boa noite");
+echo ola("Glaucio", "Boa tarde");
+echo ola("Glaucio");
+?>
+
+// OBS:
+<?php
+function ola($texto, $periodo="Bom dia") {
+    return "Olá $texto, $periodo";
+}
+
+echo ola(); // daria erro, pq embora periodo tenha valor padrao, 'texto' não tem, então faltaria parametro.
+?>
+
+// então, a ordem NO PHP é sempre da esquerda para direita. sempre tenho q passar primeiro o primeiro parametro, pra dps passar o segundo. parametros que não têm valor padrão, portanto, coloquem sempre à esquerda.
+
+<?php
+
+function ola() {
+    $argumentos = func_set_args(); // com essa funçao, ele obtem todos os argumentos passados para a função (no caso, função ola)
+
+    return $argumentos;
+}
+
+var_dump(ola("Bom dia!", 10)); // vc sabe que o primeiro parametro foi uma string, e o segundo foi inteiro int
+
+?>
+
+//////////
+
+Passagem de parametro por valor x por referencia
+
+$a = 10;
+
+function trocaValor($a) {
+    $a += 50;
+    return $a;
+}
+
+echo $a; // mostar 10
+echo "<br>";
+echo trocaValor($a); // mostraria 50
+echo $a; // vai mostrar '10' de novo, pq oq acontece na funçao, vale dentro da função, então $a não alterou o valor de 'a'.
+
+// para fazer passagem de valor por referência, usemos '&' antes do cifrão.
+function trocaValor(&$a) {
+    $a += 50;
+    return $a;
+} // agora, ao alterar aí dentro da função, irá alterar fora tb, o valor de $a tbm muda. portanto, isto se chama passagem de valor por referencia. ao passar normal, sem que altere fora do escopo da funçao, chama-se passagem de parametro por valor.
+
+se chamar inclusive 2 vezes a funçao, altera 2 vezes, isto é, faz 2 vezes o $a += 50. 
+
+veja outro ex:
+
+<?php
+
+$pessoa = array(
+    'nome' => 'João',
+    'idade' => 18
+);
+
+foreach($pessoa as &$valor) { // quando tiver passando no foreach, quero alterar os dados do array. fiz a referencia no foreach
+    if(gettype($valor) === 'integer') $valor += 10; // gettype pega o tipo de valor da variável
+    echo $valor.'<br>';
+}
+
+print_r($pessoa);
+?>
+
+//////////////
+
+
+... no parametro significa que voce recebe não parâmetro na funçao do php:
+
+function soma(int ...$valores):string  // vai pegar todos os parametros do array (array $valores) de uma vez so. o ':' significa que voce vai retornar algo, e voce vai retornar o tipo, o tipo String. é a conversão do tipo no retorno
+{
+
+    return array_sum($valores); // funçao do php que ja soma todos os valores.
+
+}
+
+echo var_dump(soma(2, 2));
+echo "<br>";
+echo soma(29, 33);
+echo "<br>";
+echo var_dump(soma(1.5, 3.2));
+echo "<br>";
+
+/\ verá que todos os numeros que tao mostrando agora, de inteiro viraram strings.
+
+/////////////
+
+Função recursiva - quando uma funçao chama a si mesmo.
+lembrando, no php, lista para tags ordenadas, <ol>, listas nao ordenadas, <ul>.
+
+funçao recursiva não deve ser sempre a primeira funçao, tente resolver com foreach ou while antes, pois funçao recursiva consome muito.
+
+<?php
+
+$hierarquia = array(
+    array(
+        'nome_cargo' => 'CEO', // atribuiçao de chave/valor é =>
+        'subordinados' => array(
+            array(
+                'nome_cargo' => 'Diretor Comercial',
+                'subordinados' => array(
+                    'nome_cargo' => 'Gerente de Vendas'
+                )
+            ),
+
+            array(
+                'nome_cargo' => 'Diretor Financeiro',
+                'subordinados' => array(
+                    'nome_cargo' => 'Gerente de Contas a Pagar',
+                    'subordinados' => array(
+                        'nome_cargo' => 'Supervisor de Pagamentos'
+                    )
+                )
+            ),
+            array(
+                'nome_cargo' => 'Gerente de Compras',
+                'subordinados' => array(
+                    'nome_cargo' => 'Supervisor de Suprimentos'
+                )
+            )
+        )
+    )
+);
+
+function exibe($cargos)
+{
+
+    $html = '<ul>'; // dentro de uma lista, tenho q ter uma tag <li> pra ir colocando dentro dessas listas. se dentro de uma li, eu tenho outro 'subordinado' (no caso), então tenho q criar outro <ul> e nele colocar outro '<li>'
+    
+    foreach ($cargos as $cargo) { // cada cargo que eu encontrar vou chamar de 'cargo' no singular.
+
+    .$html .= "<li>";  // usamos dnv .= para concatenar com o que já tem. abrindo a tag "<li>"
+    .$html .= $cargo['nome_cargo']; // esta variável $cargo é somente um array
+    .$html .= "</li>"; // agora, para vermos se tem outro nome_cargo, teria que ver outro foreach, dentro de outro foreach, e assim vai. pra evitar isto, ai usamos as funções recursivas.
+
+    if(isset($cargo["subordinados"]) && count($cargo['subordinados']) > 0)
+
+    }
+
+
+    $htmo .= '</ul>'; // .= para ir acumulando
+
+    return $html;
+}
+
+echo exibe($hierarquia);
+
+?>
