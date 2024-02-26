@@ -7,8 +7,8 @@ $carros[0][1] = 'Cobalt';
 $carros[0][2] = 'Camaro';
 
 $carros[1][0] = 'Ford';
-$carros[1][0] = 'Fiesta';
-$carros[1][1] = 'Eco Sport';
+$carros[1][1] = 'Fiesta';
+$carros[1][2] = 'Eco Sport';
 print_r($carros);
 
 echo $carros[0][2];
@@ -208,7 +208,7 @@ echo ola(); // daria erro, pq embora periodo tenha valor padrao, 'texto' não te
 <?php
 
 function ola() {
-    $argumentos = func_set_args(); // com essa funçao, ele obtem todos os argumentos passados para a função (no caso, função ola)
+    $argumentos = func_get_args(); // com essa funçao, ele obtem todos os argumentos passados para a função (no caso, função ola)
 
     return $argumentos;
 }
@@ -290,51 +290,63 @@ funçao recursiva não deve ser sempre a primeira funçao, tente resolver com fo
 
 $hierarquia = array(
     array(
-        'nome_cargo' => 'CEO', // atribuiçao de chave/valor é =>
+        'nome_cargo' => 'CEO',
         'subordinados' => array(
             array(
                 'nome_cargo' => 'Diretor Comercial',
                 'subordinados' => array(
-                    'nome_cargo' => 'Gerente de Vendas'
+                    array(
+                        'nome_cargo' => 'Gerente de Vendas'
+                    )
                 )
             ),
-
             array(
                 'nome_cargo' => 'Diretor Financeiro',
                 'subordinados' => array(
-                    'nome_cargo' => 'Gerente de Contas a Pagar',
-                    'subordinados' => array(
-                        'nome_cargo' => 'Supervisor de Pagamentos'
+                    array(
+                        'nome_cargo' => 'Gerente de Contas a Pagar',
+                        'subordinados' => array(
+                            array(
+                                'nome_cargo' => 'Supervisor de Pagamentos'
+                            )
+                        )
                     )
                 )
             ),
             array(
                 'nome_cargo' => 'Gerente de Compras',
                 'subordinados' => array(
-                    'nome_cargo' => 'Supervisor de Suprimentos'
+                    array(
+                        'nome_cargo' => 'Supervisor de Suprimentos'
+                    )
                 )
             )
         )
     )
 );
 
+// isset é validação de variável, pra ver se ela existe (foi definida) ou não.
+
 function exibe($cargos)
 {
 
     $html = '<ul>'; // dentro de uma lista, tenho q ter uma tag <li> pra ir colocando dentro dessas listas. se dentro de uma li, eu tenho outro 'subordinado' (no caso), então tenho q criar outro <ul> e nele colocar outro '<li>'
     
-    foreach ($cargos as $cargo) { // cada cargo que eu encontrar vou chamar de 'cargo' no singular.
+    foreach ($cargos as $cargo) { // cada cargo que eu encontrar vou chamar de 'cargo' no singular. percorrendo o array $cargos, $cargo representa cada elemento do array $cargos em cada iteração do loop.
 
     .$html .= "<li>";  // usamos dnv .= para concatenar com o que já tem. abrindo a tag "<li>"
     .$html .= $cargo['nome_cargo']; // esta variável $cargo é somente um array
-    .$html .= "</li>"; // agora, para vermos se tem outro nome_cargo, teria que ver outro foreach, dentro de outro foreach, e assim vai. pra evitar isto, ai usamos as funções recursivas.
 
-    if(isset($cargo["subordinados"]) && count($cargo['subordinados']) > 0)
+        if(isset($cargo["subordinados"]) && count($cargo['subordinados']) > 0)
+        {
+            $html .= exibe($cargo['subordinados']); // a funçao recursiva sendo usada aqui a sua recursividade.
+        }
+    .$html .= "</li>"; // agora, para vermos se tem outro nome_cargo, teria que ver outro foreach, dentro de outro foreach, e assim vai. pra evitar isto, ai usamos as funções recursivas.
 
     }
 
 
-    $htmo .= '</ul>'; // .= para ir acumulando
+    $html .= '</ul>'; // .= para ir acumulando
 
     return $html;
 }
@@ -342,3 +354,538 @@ function exibe($cargos)
 echo exibe($hierarquia);
 
 ?>
+
+///////////////////
+
+Funções anonimas -
+Mais comum no JS. Sem nome, sem return.
+
+// Um jeito de usar as funçoes anonimas
+function test($callback){
+    $callback();
+}
+
+test(function(){
+    echo "Terminou!";
+});
+
+// Outro jeito de usar as funçoes anonimas
+$fn = function($a){
+    var_dump($a);
+};
+
+$fn("Oi");
+
+/////////////
+
+POO -
+// Usa 'class' e o nome da classe; classe smp começa com letra maiuscula.
+class Pessoa {
+    public $nome; // atributo
+
+    public function falar() { // método (funçao dentro de uma classe)
+        return "O meu nome é ".$this->nome; // quero acessar meu proprio atributo nome. acessamos com o $this-> pra acessar uma informaçao dela, o this é a representaçao da nossa classe já instanciada, ou seja, o objeto. ATENÇÃO: dentro de um método, qualquer método, pra eu fazer referencia a um atributo que tá fora, devo usar $this->NOMEDOATRIBUTO. $this-> serve pra referenciar atributos e métodos dentro de métodos.
+    }
+} 
+
+$glaucio = new Pessoa(); // não tem metodo construtor e colocamos () aqui, mas aqui foi força do habito, e como nao temos neste caso metodo construtor, esse parametro é opcional.
+$glaucio->nome = "Glaucio Daniel"; // referenciando um atributo, mesmo de fora, eu consigo acessar ele pq ele é publico
+echo $glaucio->falar();
+
+////////////
+
+atributos e métodos.
+
+class Carro {
+    private $modelo;
+    private $motor;
+    private $ano;
+
+    public function getModelo() { //metodos getters e setters agora.
+        return $this->modelo;
+    }
+
+    public function setModelo($modelo) {
+        $this->modelo = $modelo; // aqui, são coisas diferentes. this modelo vai receber o valor do modelo passado como parametro, e this modelo aqui no caso vai ser o atributo lá em cima.
+    }
+
+    public function getMotor():float { // esperamos receber apenas float, entao colocamos o :float
+        return $this->motor;
+    }
+
+    public function setMotor() {
+        $this->motor = $motor;
+    }
+
+    // !!!!!!!!!! VEJA QUE EM MÉTODOS SET, não precisa retornar, afinal so muda o atributo, se eu quiser mostrar o atributo, eu o mostro com o get.
+
+    public function getAno():int { // mesma coisa aqui, esperamos receber apenas int para ano.
+        return $this->ano;
+    }
+
+    public function setAno() {
+        $this->ano = $ano;
+    }
+
+
+}
+
+
+/////////////////
+
+Métodos estáticos - acessar métodos sem precisar instanciar um objeto.
+
+class Documento {
+    private $numero;
+
+    public function getNumero() 
+    {
+        return $this->numero;   
+    }
+
+    // quando alguem definir um novo numero, podemos testar o método. para chamar, usamos o :: para chamar um método estático.,
+    public function setNumero($numero) 
+    {
+        $resultado = Documento::validarCPF($numero); // NOMEDACLASSE::NOMEDOMÉTODOESTÁTICO. invocou o método
+        if($resultado == false) {
+            throw new Exception("CPF informado não é válido", 1);
+        }
+        $this->numero = $numero;
+    }
+
+    public static function validarCPF($cpf):bool { // botei 'bool' aqui pq é o que esperamos receber. 
+        if(empty($cpf)) {
+            return false;
+        }
+     
+        $cpf = preg_match('/[0-9]/', $cpf)?$cpf:0;
+    
+        $cpf = str_pad($cpf, 11, '0', STR_PAD_LEFT);
+         
+        
+        if (strlen($cpf) != 11) {
+            echo "length";
+            return false;
+        }
+        
+        else if ($cpf == '00000000000' || 
+            $cpf == '11111111111' || 
+            $cpf == '22222222222' || 
+            $cpf == '33333333333' || 
+            $cpf == '44444444444' || 
+            $cpf == '55555555555' || 
+            $cpf == '66666666666' || 
+            $cpf == '77777777777' || 
+            $cpf == '88888888888' || 
+            $cpf == '99999999999') {
+            return false;
+    
+         } else {   
+             
+            for ($t = 9; $t < 11; $t++) {
+                 
+                for ($d = 0, $c = 0; $c < $t; $c++) {
+                    $d += $cpf[$c] * (($t + 1) - $c);
+                }
+                $d = ((10 * $d) % 11) % 10;
+                if ($cpf[$c] != $d) {
+                    return false;
+                }
+            }
+     
+            return true;
+        }
+    }
+}
+
+$cpf = new Documento();
+$cpf->setNumero("25650599068");
+var_dump($cpf->getNumero());
+var_dump(Documento::validarCPF("25650599068")); // retorna true
+
+////////////////
+
+Métodos Mágicos -
+Quando tiver algum acontecimento, pode definir algumas açoes pra esse acontecimento. Método construtor é algo que é executado automaticamente quando um objeto é instanciado.
+Todos métodos mágicos começarão com __ no nome.
+Sempre quando for construir um método construtor, usa o __construct. o construtor é um método mágico.
+
+class Endereco {
+    private $logradouro;
+    private $numero;
+    private $cidade;
+    // queremos que, quando instancie uma classe, possa passar o logradouro e o numero da cidade
+
+    public function __construct($a, $b, $c) { // não necessariamente os parametros do construtor precisam ter o mesmo nome do atributo. aqui, __construct é nosso construtor, nosso método mágico.
+        $this->logradouro = $a;
+        $this->numero = $b;
+        $this->cidade = $c;
+    }
+
+    // Assim como temos o construct, temos o destruct. O destruct é chamado quando o objeto é destruido, quando ele é removido da memória, podendo ser quando a pagina chega no fim da execução ou se falar que quer que tire da memória, usando o 'unset'. pode-se usar o destruct quando quiser matar variaveis ou desconectar-se do banco de dados, etc. é bom pra automatizar.
+    public function __destruct()
+    {
+        var_dump("DESTRUIR");
+    }
+
+    // temos também outro atributo. quando queremos transformar algo em string basicamente. é o __toString.
+    public function __toString() {
+        return $this->logradouro.", " .$this->numero." - " .$this->cidade;
+    }
+
+}
+
+$meuEndereco = new Endereco("Rua Zeferino", "123", "Rio de Janeiro"); // agora precisamos passar os 3 parametros, ja que temos construtor
+var_dump($meuEndereco);
+unset($meuEndereco);
+
+///////////////
+
+Encapsulamento - 
+é proteger/controlar quem pode ver o que. encapsulamento protege as informações. ele faz diferença na herança, onde uns atributos e métodos serão enxergados apenas na classe que a define, e outros métodos e atributos poderão ter na classe filha.
+
+class Pessoa {
+    public $nome = "Conor";
+    protected $idade = 35; // somente os herdeiros da classe, as classes filhas, poderão acessar este atributo
+    private $senha = "123456";
+
+    public function verDados() {
+        echo $this->nome . "<br/>";
+        echo $this->idade . "<br/>";
+        echo $this->senha . "<br/>";
+    }
+}
+
+$objeto = new Pessoa();
+
+echo $objeto->nome . "<br/>";
+$objeto->verDados(); // como o método 'verDados' é público, todos os dados apareceram.
+
+// public todos podem ver. protected so as filhas podem ver. private somente aquela classe pode ver.
+
+class Pessoa {
+    public $nome = "Conor";
+    protected $idade = 35; // somente os herdeiros da classe, as classes filhas, poderão acessar este atributo
+    private $senha = "123456";
+
+    public function verDados() {
+        echo $this->nome . "<br/>";
+        echo $this->idade . "<br/>";
+        echo $this->senha . "<br/>";
+    }
+}
+
+class Programador extends Pessoa {
+    public function verDados() {
+        echo get_class($this) . "<br/>"; // irá mostrar o nome da classe do objeto atual.
+        echo $this->nome . "<br/>";
+        echo $this->idade . "<br/>";
+        echo $this->senha . "<br/>"; // aqui irá dar erro pq senha é privado
+    }
+}
+
+$objeto = new Programador();
+
+echo $objeto->nome . "<br/>";
+$objeto->verDados(); // vai funcionar pq, programador herdou de 'Pessoa' o método 'verDados' q é publico. se fosse private, nao iria funcionar.
+
+
+///////////////
+
+herança - 
+por ex
+tudo que for de comum entre diversos tipos de veiculos de locomoçao, como navio, moto, carro, etc, posso ter uma classe base. e dessa vc herda pra fazer classes pra fazer coisas especificas, desde que nao tenham algo tao em comum (que possa ficar em uma classe intermediaria). isso é abstração. uma UML bem feita codifica qualquer objeto.
+
+class Documento {
+    private $numero; // um documento sempre vai ter um numero
+    public function getNumero() {
+        return $this->numero;
+    }
+    public function setNumero($n) {
+        $this->numero = $n;
+    }
+
+}
+
+class CPF extends Documento {
+    public function validar():bool 
+    {
+        $numeroCPF = $this->getNumero();
+        // Validação do CPF, aqui coloca o codigo de validaçao do cpf.
+        return true;
+    }
+}
+
+$doc = new CPF();
+
+$doc->setNumero("111222333-44");
+
+$doc->validar();
+
+var_dump($doc->validar());
+
+echo "<br/>";
+
+echo $doc->getNumero();
+
+/////////////////
+
+INTERFACE:
+Ajuda bastante a organizar o código, pq ele determina padrões, por ex, vou fazer um documento, então ele precisa ter um método de validação do documento, ou um método que vai salvar este documento no banco de dados. Você o obriga a ter um determinado padrão. Determina padrões q voce vai ter que fazer. dentro da interface eu digo quais metodos tal coisa vai ter, quais parametros vai ter e qual o modificador de acesso ou encapsulamento os metodos vai ter. na interface não digo o que faz. a classe q implementar essa interface so vai funcionar quando bater 100% com a interface.
+
+interface Veiculo { // o que um veiculo precisaria ter? vamos escrever aqui alguns dos padrões
+    public function acelerar($velocidade);
+    public function frear($velocidade);
+    public function trocarMarcha($marcha);
+} 
+
+class Civic implements Veiculo {
+    
+}
+
+$carro = new Civic(); // se eu rodar somente isto, verá q dará erro, pois irá mostrar que os métodos declarados na interface Veiculo, precisam ser declarados na classe Civic tbm, pq ela implementa a interface Veiculo.
+
+// VEJA AGORA:
+
+interface Veiculo { // o que um veiculo precisaria ter? vamos escrever aqui alguns dos padrões
+    public function acelerar($velocidade);
+    public function frear($velocidade);
+    public function trocarMarcha($marcha);
+} 
+
+class Civic implements Veiculo {
+    public function acelerar($velocidade)
+    {
+        echo "O veículo acelerou até " . $velocidade . "km/h";
+    }
+
+    protected function frear($velocidade)
+    {
+        echo "O veículo freou até " . $velocidade . "km/h";
+    }
+
+    public function trocarMarcha($marcha)
+    {
+        echo "O veículo engatou a marcha " .$marcha;
+    }
+}
+
+$carro = new Civic();
+$carro->acelerar(150);
+echo "<br/>";
+$carro->trocarMarcha(1);
+echo "<br>";
+
+// util ate pra integraçao de apis, isto é, pra codigos de terceiros.
+
+// ---------> A DIFERENÇA ENTRE INTERFACE E CLASSE ABSTRATA: uma classe pode implementar várias interfaces.
+
+////////////
+CLASSE ABSTRATA-
+A diferença aqui e a da interface, tbm, é q nao apenas definimos os métodos que precisamos ter, mas tbm oq eles fazem. uma diferença de classe abstrata pra classe comum é que o objeto nunca vai instanciar uma classe abstrata. crio uma classe, q vai ser abstrata, etals, e, pra usá-la, crio OUTRA classe que vai extender dessa classe abstrata e vai respeitar as definições.
+
+interface Veiculo { // o que um veiculo precisaria ter? vamos escrever aqui alguns dos padrões
+    public function acelerar($velocidade);
+    public function frear($velocidade);
+    public function trocarMarcha($marcha);
+} 
+
+abstract class Automovel implements Veiculo { // qq automóvel implementa a interface Veículo, precisa ter esses metodos com esses atributos.
+    public function acelerar($velocidade)
+    {
+        echo "O veículo acelerou até " . $velocidade . "km/h";
+    }
+
+    protected function frear($velocidade)
+    {
+        echo "O veículo freou até " . $velocidade . "km/h";
+    }
+
+    public function trocarMarcha($marcha)
+    {
+        echo "O veículo engatou a marcha " .$marcha;
+    }
+}
+
+class DelRey extends Automovel {
+    // aqui a classe DelRey pode ter suas coisas especificas, de seu veiculo.
+    public function empurrar() {
+
+    }
+}
+
+$carro = new DelRey(); // daí não posso instanciar um objeto direto da classe abstrata Automovel.
+$carro->acelerar(200);
+
+// uma classe vai herdar somente de uma classe abstrata, mas uma classe pode implementar várias interfaces
+
+///////////////
+
+Polimorfismo - classes com o mesmo nome possuem comportamentos diferentes.
+abstract class Animal {
+    public function falar(){
+        return "Som";
+    }
+    public function mover(){
+        return "Anda";
+    }
+}
+
+class Cachorro extends Animal {
+    public function falar() { // houve polimorfismo, mudou o comportamento
+        return "Late";
+    }
+}
+
+// Agora criei outra classe, Passaro.
+class Passaro extends Animal {
+    public function falar() { // houve polimorfismo, mudou o comportamento
+        return "Canta";
+    }
+
+    public function mover() {
+        return "Voa e " . parent::mover(); // aqui, ele diz: chame o método 'mover' da classe 'Animal', que é a classe pai. vc chama algum metodo da classe pai.
+    }
+}
+
+class Gato extends Animal {
+    public function falar() { // houve polimorfismo, mudou o comportamento
+        return "Mia";
+    }
+}
+
+$pluto = new Cachorro();
+echo $pluto->falar() . "<br/>";
+echo $pluto->mover() . "<br/>";
+
+$garfield = new Gato();
+echo $garfield->falar() . "<br/>";
+
+$ave = new Passaro();
+echo $ave->mover();
+
+//////////////
+
+Incluindo classes com AutoLoad -
+Digamos por exemplo que seu projeto precise de 4 ou 5 classes, será q precisariamos de require_once para cada uma delas? Aí entra o AutoLoad. É uma função do PHP para que carregue as classes automaticamente sem que use o require. a funçao autoload ficaria em um arquivo e esse arquivo iria como include para cada um dos outros projetos. 
+
+quero simplesmente criar um novo DelRey, instanciar um novo DelRey.
+
+// o autoload so sabe procurar as classes no mesmo diretório.
+
+function incluirClasses($nomeClasse){
+    if (file_exists($nomeClasse.".php") === true) {
+        require_once($nomeClasse.".php");
+    }
+}
+
+spl_autoload_register("incluirClasses"); // registra a função 'incluirclasses' como uma função de AutoLoad.
+spl_autoload_register(function($nomeClasse){
+    if (file_exists("Abstratas". DIRECTORY_SEPARATOR . $nomeClasse.".php") === true) {
+        require_once("Abstratas" . DIRECTORY_SEPARATOR . $nomeClasse.".php");
+    }
+});
+
+$carro = new DelRey(); // quando você cria uma instância de DelRey, o PHP tentará carregar a classe DelRey. Se o arquivo DelRey.php existir no mesmo diretório do script, ele será incluído. Se não existir, o PHP tentará carregar a classe a partir do diretório "Abstratas", se aplicável.
+
+$carro->acelerar(80); // Se a classe DelRey estiver no arquivo DelRey.php no mesmo diretório do script ou no diretório "Abstratas", e se a classe tiver o método acelerar(80), então o código deverá funcionar corretamente.
+
+// /\ Abstratas, em cima, é o nome do diretório em que talvez o arquivo possa estar. 
+
+//////////////////
+
+NameSpace - 
+NameSpace permite agrupar as classes dentro de diretórios de uma forma organizada. Aí entra a diferenciação, dividir em espaços diferentes, daí namespace, dar nome para os espaços.
+
+// Devemos dizer onde ele vai procurar as classes.
+spl_autoload_register(function($nameClass){
+    $dirClass = "class"; // a pasta onde o php deve procurar nossas pastas. nas aulas, essa é o nome da pasta onde tem as classes.
+    $filename = $dirclass . DIRECTORY_SEPARATOR . "$nameClass" . ".php";
+    if(file_exists($filename)) {
+        require_once($filename);
+    }
+    
+});
+
+// Use a constante DIRECTORY_SEPARATOR que o php irá se adaptar pra unix ou windows.
+
+um arquivo cadastro (!!!! lembrando que o nome da classe SEMPRE deve ser igual ao nome do arquivo):
+class Cadastro {
+    private $nome;
+    private $email;
+    private $senha;
+
+    public function getNome():string 
+    {
+        return $this->nome;
+    }
+
+    public function getEmail():string 
+    {
+        return $this->email;
+    }
+
+    public function getSenha():string 
+    {
+        return $this->senha;
+    }
+
+    public function setNome($nome)
+    {
+        $this->$nome = $nome;
+    }
+
+    public function setEmail($email)
+    {
+        $this->$email = $email;
+    }
+
+    public function setSenha($senha)
+    {
+        $this->$senha = $senha;
+    }
+
+    public function __toString() {
+        return json_encode(array(
+            "nome"=>$this->getNome(),
+            "email"=>$this->getEmail(),
+            "senha"=>$this->getSenha(),
+        ));
+    }
+
+}
+
+dentro de uma pasta chamada 'namespace', criamos um arquivo, chamado index.php.
+abramos o index.php, e digitemos:
+require_once("config.php");
+
+$cad = new Cadastro();
+
+$cad->setNome("Luiz");
+$cad->setEmail("luiz@hcode.com");
+$cad->setSenha("12345");
+
+echo $cad; // o 'echo' não consegue mostrar um objeto, só mostra texto. mas o objeto sabe virar string, q é o __toString.
+
+// digamos que eu tivesse uma subpasta cliente e dentro dela eu tivesse uma outra pasta q seria o cadastro desse cliente, pq vc pode ter cadastro de cliente, de fornecedor, de funcionario, de instrutor... criemos um namespace apenas para o cadastro do cliente.
+criemos uma pasta 'cliente' dentro da pasta 'class', e dentro dessa pasta cliente teremos o cadastro de um cliente. criemos o arquivo dentro 'Cadastro.php'.
+class Cadastro extends {
+    public function registrarVenda() {
+        echo "Foi registrada uma venda para o cliente " .$this->getNome(); // da onde vem esse getNome? ela tem que herdar do Cadastro Principal. essa classe, precisamos informar que ela está em um nameSpace. devemos entao informar o namespace desse arquivo.
+    }
+}
+\/
+
+namespace Cliente;
+use 
+class Cadastro extends \Cadastro{ // volta na raiz e lá acha a classe Cadastro
+    public function registrarVenda() {
+        echo "Foi registrada uma venda para o cliente " .$this->getNome(); // da onde vem esse getNome? ela tem que herdar do Cadastro Principal. essa classe, precisamos informar que ela está em um nameSpace. devemos entao informar o namespace desse arquivo. colocamos de nome "Cliente"
+    }
+}
+
+agora, no arquivo index.php
+// Precisamos usar a classe do NameSpace, pra usar um nameSpace, uso a palavra-chave "use":
+use Cliente\Cadastro; // NAMESPACE\CLASSE -> quero usar o namespace 'Cliente' e a classe 'Cadastro', então, agora, no index.php, ao ver o "$cad = new Cadastro(); ", o Cadastro será o cadastro que está dentro de Cliente.
+
+o cadastro que tá dentro do namespace Cliente' é diferente do cadastro que tá na raiz de class. o cadastro do cliente precisa compartilhar informações com qualquer tipo de cadastro, então extende da classe raiz. 
