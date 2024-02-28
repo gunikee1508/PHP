@@ -889,3 +889,312 @@ agora, no arquivo index.php
 use Cliente\Cadastro; // NAMESPACE\CLASSE -> quero usar o namespace 'Cliente' e a classe 'Cadastro', então, agora, no index.php, ao ver o "$cad = new Cadastro(); ", o Cadastro será o cadastro que está dentro de Cliente.
 
 o cadastro que tá dentro do namespace Cliente' é diferente do cadastro que tá na raiz de class. o cadastro do cliente precisa compartilhar informações com qualquer tipo de cadastro, então extende da classe raiz. 
+
+/////////////////////////
+
+[CONTINUAÇÃO DO QUE TENHO EM CS]
+No bind_param, tem q ser passado parametro por referencia, ou seja, devemos criar uma variável, colocar o valor nessa variável, que vai alocar em alguma memória e ai manda a referencia dessa variavel. Por isso, colocamos $login e $senha.
+
+$stmt = $conn->prepare("INSERT INTO tb_usuarios (deslogin, dessenha) VALUES (?, ?)");
+$stmt->bind_param("ss", $login, $pass);
+$login = "user";
+$pass = "12345";
+
+/\ estamos chamando e depois definindo variavel? isso pode, sim, pois aqui tudo isso é o statement prepare, ele vai preparar o comando numa variavel, só sera executado qd o metodo 'execute()' será chamado.
+
+ao executar o arquivo, verá que vai inserir os dados no banco de dados.
+
+com o statement, se vc quiser inserir outro usuario, basta ir no $stmt, jogar outro login e senha, e chamar o 'stmt->execute()' novamente.
+
+---- mas e se eu quiser selecionar e mostrar na tela, q venha do banco de dados? temos o comando fetch.
+
+vamos fazer agora sem o prepare, vamos executar um comando direto no banco de dados. temos que usar a variavel conn da conexão, usar o método query e passar um comando qualquer sql.
+
+$conn = new mysqli("localhost", "root", "", "dbphp7");
+
+if($conn->connect_error) {
+    echo "Error: " . $conn->connect_error;
+}
+
+$result = $conn->query("SELECT * FROM tb_usuarios ORDER BY deslogin"); // executei a query e guardei o resultado em uma variavel chamada 'result'.
+
+// e como acessar os dados que tão nessa variavel $result? precisamos acessar a variavel e verificar se tem algum dado dentro dela.
+
+while($row = $result->fetch_array()) { // a linguagem SQL tem um cursor, esse cursor tem dados, então vamos verificar linha por linha se tem algum dado dentro do cursor. pra pegar a 1 linha e ver se tem algum dado dentro do cursor, executamos o método fetch_array(). nessa linha de codigo, se tiver esses dados, ele pega e joga no atributo $row. se não tiver, ele chega no EOF (end of file), e retorna um array vazio q equivale a false.
+
+var_dump($row);
+
+}
+
+/\ ao executar, verá que terá arrays. veja que ele traz array com chaves de tanto com indices numericos quanto com indices de nomes. se eu quiser trazer só os nomes, e não os numeros, passa uma constante pre-definida:
+while($row = $result->fetch_array(MYSQLI_ASSOC)) { 
+
+    var_dump($row);
+    
+}
+
+/\ mostrará so indices de nomes.
+
+OU
+
+while($row = $result->fetch_assoc()) { 
+
+    var_dump($row);
+ 
+}
+
+
+/\ ----!!!!!!!!!!! fetch_assoc é associative array, traz so o nome string do indice. tem tbm so os indices numericos, etc.
+
+e como converter pra JSON se quiser levar pra outra aplicação?
+basta criar uma variavel e dizer q é um array, e dentro do while, eu tenho meus dados, dados associativos.
+
+
+$data = array();
+while($row = $result->fetch_assoc()) { 
+    array_push($data, $row); // no meu array $data, vou adicionar o $row. ou seja, vou ter um array de arrays.
+    var_dump($row);
+}
+
+echo json_encode($data);
+
+//////////////////////////////
+
+PDO - 
+abrindo a conexão:
+$conn = new PDO("mysql:dbname=dbphp7;host=localhost", "root", "senha"); // dentro dos parenteses vamos passar uma string. com quem vamos conversar. primeiro queremos conversar com o mysql. se eu fosse conversar com o sql server eu iria colocar outro tipo de banco. é um padrão chamado DSN, padrão de conexão com o banco de dados.  tempos que colocar o nome do banco e o servidor, nas aspas. host é o servidor, com quem eu quero me conectar. os proximos 2 parametros é o login e senha.
+
+COM PDO, podemos trabalhar direto com transações.
+
+$stmt = $conn->prepare("SELECT * FROM tb_usuarios ORDER BY deslogin");
+
+$stmt->execute();
+
+$results = $stmt->fetchAll(PDO::FETCH_ASSOC); // o fetchall vai fatiar TODAS as linhas, diferente do mysqli q tinha q fazer um while passando linha por linha, jogando na linha do row, etc. joguei o resultado em $result, que ja vai ta armazenado todos os resultados. colocamos PDO::FETCH_ASSOC, vai trazer apenas o indice associativo (chave em nome).
+
+var_dump($results);
+
+// e como faz pra navegar por esse ai? se fizesse json_Encode ja tava em json e diminuiria o codigo. mas se quiser percorrer, navegar, mudar algo, pode usarr um foreach.
+
+foreach($result as $row)
+{
+    // pra pegar o key e value:
+    foreach($row as $key => $value) { // o $key é o nome da coluna, e o $value é o valor lá dentro
+        echo "<strong>".$key."</strong>".$value."<br/>";
+    }
+    
+}
+
+/////////////////
+
+Conectar PHP 7 ao SQL Server:
+$conn = NEW PDO("sqlsrv:database=dbphp7;server=localhost\SQLEXPRESS;ConnectionPooling=0", "root", ""); // mudando em comparaçao ao MYSQL do PDO. connectionpooling na maioria das vezes vai ser 0, a menos q vc queira manter o estado de conexão aberta. depois vem login e senha.
+
+
+//////////////
+
+PDO: Inserindo dados no banco - 
+$conn = new PDO("mysql:host=localhost; dbname=dbphp7", "root", "senha"); 
+
+// agora, prepara a query
+$stmt = $conn->prepare("INSERT INTO tb_usuarios (deslogin, dessenha) VALUES(:LOGIN, :SENHA)");  // agora, colocamos :UMIDENTIFICADOR, pra segurança.
+
+$login="jose";
+$password = "1234567890";
+
+$stmt->bindParam(":LOGIN", $login); // usamos bindParam para cada parametro que a gente tem, na ordem q colocamos. como colocamos :login e :senha, o bindParam tem q ser nessa ordem. 
+// temos q fazer isso para quantos parametros tivermos, como temos 2, vms fazer o da senha agora.
+$stmt->bindParam(":SENHA", $password);
+
+$stmt->execute();
+
+echo "Inserido OK";
+
+//////////////
+
+Alterando dados no banco - 
+Agora, no prepare, em vez de inserir um dado vou estar apenas alterando um registro ja existente.
+$conn = new PDO("mysql:host=localhost; dbname=dbphp7", "root", "senha"); 
+
+// agora, prepara a query
+$stmt = $conn->prepare("UPDATE tb_usuarios SET deslogin = :LOGIN, dessenha = :PASSWORD where idusuario = :ID");  // no insert tinha o values, agui vamos pra quando for igual ao :LOGIN e :PASSWORD. temos que criar agora bindParam para o :ID. não esqueça do 'where' pro update.
+
+$login="jose";
+$password = "1234567890";
+$id = 2;
+
+$stmt->bindParam(":LOGIN", $login); // usamos bindParam para cada parametro que a gente tem, na ordem q colocamos. como colocamos :login e :senha, o bindParam tem q ser nessa ordem. 
+// temos q fazer isso para quantos parametros tivermos, como temos 2, vms fazer o da senha agora.
+$stmt->bindParam(":SENHA", $password);
+$stmt->bindParam(":ID", $id)
+
+$stmt->execute();
+
+echo "Inserido OK";
+
+////////////////
+
+Apagando dados no banco - 
+
+$conn = new PDO("mysql:host=localhost; dbname=dbphp7", "root", "senha"); 
+
+// agora, prepara a query
+$stmt = $conn->prepare("DELETE FROM tb_usuarios WHERE IDUSUARIOS = :ID");  
+
+$login="jose";
+$password = "1234567890";
+$id = 2;
+
+$stmt->bindParam(":LOGIN", $login); 
+$stmt->bindParam(":SENHA", $password);
+$stmt->bindParam(":ID", $id)
+
+$stmt->execute();
+
+/\ delete exclui DADOS, use sempre o WHERE.
+
+/////////////
+
+PDO- Executando transações -
+Restaurar backup é um processo danoso. E se eu pudesse controlar o update, tipo, se eu tivesse ctrl+z? com banco de dados, isso é transação. tenho COMMIT pra confirmar ou ROLLBACK pra cancelar. 
+por ex: 
+antes de iniciarmos o statement, vamos iniciar a transação. e a transação tá amarrada a conexao, e não ao statement. 
+
+$conn = new PDO("mysql:host=localhost; dbname=dbphp7", "root", "senha"); 
+
+$conn = beginTransaction(); // iniciou a transação
+
+// agora, prepara a query
+$stmt = $conn->prepare("DELETE FROM tb_usuarios WHERE IDUSUARIOS = ?");  
+
+$login="jose";
+$password = "1234567890";
+$id = 2;
+
+$stmt->execute(array($id)); // aqui, em vez de usar bindParam no parametro, aqui no execute, passo um array. a primeira ? que encontrar, vai ser o primeiro indice do array.
+
+$conn->rollback(); // com isso, agora não irá realmente deletar o registro no caso onde tiver $id = 2, por causa do rollback.
+
+// Se fizermos commit, ele iria fazer:
+$conn->commit(); // agora ta confirmado, vai executar normal o comando.
+
+/////////////
+
+PDO - DAO -
+em vez de fazer o php conversar direto com o banco, ele passa pelas classes que tratam direto com essa informação.
+aqui vamos aprender a tratar com essas classes que vão direto pro banco.
+
+criamos repositorio no github
+criamos pasta 'pdo' no htdocs, abrimos o git bash lá. executamos:
+git init
+git remote add origin LINKDOREPOSITORIO
+git pull origin master // pegar tudo que tem la, mas tem nada lá no repositorio.
+
+arquivo php Sql.php
+class Sql extends PDO { // classe sql (podia ser o nome q eu quiser) extendendo da classe NATIVA DO PHP: PDO
+    private $conn; // tenho o atributo $conn no escopo da minha classe.
+
+    public function __construct() 
+    { // construtor para quando eu criar um objeto dessa classe Sql, ela conecte automaticamente ao banco de dados. outra maneira pra conectar: eu poderia colocar como parametros no metodo construtor tbm, e quando eu chamasse a classe new Sql, eu já passaria os parametros para conectar.
+
+        $this->conn = new PDO("mysql:host=localhost;dbname=dbphp7", "root", "senha"); 
+    }
+
+    // /\ isso ja é suficiente pra eu entrar no banco. mas, como executo um comando lá? tem aquele prepare, bindparam, execute, etc. pra isso, faremos:
+
+    public function runQuery($RawQuery, $params = array()) { // $rawQuery significa uma query bruta, uma query que vamos tratar depois. e vamos receber os parametros, q posso falar por PADRÃO que será nosso array, pq serão nossos dados.
+
+        $stmt = $this->conn->prepare($RawQuery); // criei meu statement, q é uma variavel mesmo, nao tem this, so funciona dentro desse metodo. como eh classe extendida, temos acesso ao 'prepare'. 
+
+        // agora vou associar meus parametros ao comando. como? com foreach.
+
+        foreach ($params as $key => $value) { // aqui faço foreach dos meus parametros, vou pegar a chave e o valor.
+
+            $stmt->bindParam($key, $value); // lembra que fazíamos vários bindParam? aq faço dentro do foreach, pra deixar dinamico.
+        
+        }
+    }
+
+    // mas e se eu tiver outros métodos que também vão precisar fazer isso dentro do query? em vez de deixar dentro do query, posso fazer um para chamar aqui o bindParam, ou setparams, algo assim. posso criar outro método e reutilizar o codigo depois. tiro o Foreach do método 'runquery' e jogo em um outro, pode ser 'setparams' e troco o nome das variáveis.
+
+    private function setParams($statment, $parameters = array()) {
+
+       foreach ($parameters as $key => $value) { 
+
+            $this->setParam($key, $value); 
+        
+        }
+    }
+
+    // Agora vamos externar, e fazer um bind de um parametro só:
+    private function setParam($statment, $key, $value) {
+        $statment->bindParam($key, $value);
+    }
+}
+
+// Agora na função runquery, agora consigo chamar o setParams, q ele vai saber como fazer o set de cada um dos parametros. 
+public function runQuery($RawQuery, $params = array()) { 
+
+    $stmt = $this->conn->prepare($RawQuery);
+
+    $this->setParams($stmt, $params);
+
+    $stmt->execute();
+
+    return $stmt; // precisamos executar, agr fazemos so um retorno com o execute.
+}
+
+// agora um método pro select:
+public function select($rawQuery, $params = array()):array (espera retorno array, fica seguro e organizado)
+{
+    $stmt = $this->runQuery($rawQuery, $params);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC); // pra ver somente os dados associativos, sem indices, apenas o de nome. aqui seria meu $result, no retorno.
+}
+// agora precisamos apenas fazer o fetch disso tudo aqui.
+
+// agora criemos outro arquivo chamado config.php, na mesma pasta onde ta o sql.php:
+criemos autoload:
+spl_autoload_register(function($class_name){
+    $filename = $class_name.".php";
+    if(file_exists($filename)) {
+        require_once($filename);
+    }
+});
+
+// Agora vamos criar outro arquivo chamado index.php
+<?php
+
+require_once("config.php");
+$sql = new Sql(); // ele sabe encontrar a classe, encontraar a classe Sql que tá lá em sql.php
+$usuarios = $sql->$sql->select("SELECT * FROM tb_usuarios"); // achando sql, já posso jogar o comando no banco de dados. o retorno jogo tudo na variavel $usuarios. fui no método select.
+echo json_encode($usuarios); 
+
+?>
+
+//////////////////////
+
+PDO - DAO - SELECT
+Agr vamos fazer a classe Sql que criamos conversar com outra classe.
+no arquivo config.php, vamos colocar que começa na pasta "class", directory separator, e nome do arquivo. isso tudo no filename, q é lá nessa pasta onde fica as classes. joguei lá então o 'sql.php'.
+vamos adicionar tudo no repositorio:
+no git bash na pasta 'dao', digitemos:
+git add --all
+git commit -m "Iniciamos o projeto"
+git push origin master
+
+criemos arquivo Usuario.php
+class Usuario {
+    private $idusuario;
+    private $deslogin;
+    private $dessenha;
+    private $dtcadastro;
+
+    public function getIdusuario() {
+        return $this->idusuario;
+    }
+
+    public function setIdusuario($value) {
+        $this->idusuario = $value;
+    }
+
+}
