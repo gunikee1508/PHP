@@ -962,7 +962,7 @@ echo json_encode($data);
 
 PDO - 
 abrindo a conexão:
-$conn = new PDO("mysql:dbname=dbphp7;host=localhost", "root", "senha"); // dentro dos parenteses vamos passar uma string. com quem vamos conversar. primeiro queremos conversar com o mysql. se eu fosse conversar com o sql server eu iria colocar outro tipo de banco. é um padrão chamado DSN, padrão de conexão com o banco de dados.  tempos que colocar o nome do banco e o servidor, nas aspas. host é o servidor, com quem eu quero me conectar. os proximos 2 parametros é o login e senha.
+$conn = new PDO("mysql:dbname=dbphp7;host=localhost", "root", "senha"); // dentro dos parenteses vamos passar uma string. com quem vamos conversar. primeiro queremos conversar com o mysql. se eu fosse conversar com o sql server eu iria colocar outro tipo de banco. é um padrão chamado DSN, padrão de conexão com o banco de dados.  temos que colocar o nome do banco e o servidor, nas aspas. host é o servidor, com quem eu quero me conectar. os proximos 2 parametros é o login e senha.
 
 COM PDO, podemos trabalhar direto com transações.
 
@@ -1197,4 +1197,179 @@ class Usuario {
         $this->idusuario = $value;
     }
 
+    public function getDeslogin() {
+        return $this->deslogin;
+    }
+
+    public function setDeslogin($value) {
+        $this->deslogin = $value;
+    }
+
+    public function getDessenha() {
+        return $this->dessenha;
+    }
+
+    public function setDessenha($value) {
+        $this->dessenha = $value;
+    }
+
+    public function getDtcadastro() {
+        return $this->dtcadastro;
+    }
+
+    public function setDtcadastro($value) {
+        $this->dtcadastro = $value;
+    }
+
+    public function loadById($id) {
+        $sql = new Sql();
+
+        $results = $sql->select("SELECT * FROM tb_usuarios WHERE idusuario = :ID", array(
+            ":ID"=>$id
+        )); // chamando o método 'select'. select pelo id do usuario, o id do usuario é chave primaria, ou seja, vai me retornar uma linha só. podemos colocar o :ID, é a identificaçao, so tem q ser igualzinho. coloquei um array, que são os nosssos parametros, que colocamos dentro da nossa classe 'sql' no método 'select' lá. ":ID"=>$id é basicamente chave=>valor. :ID é a identificação do parametro. o valor dele é minha variavel $id que to aqui recebendo no meu método. 
+
+        // so precisamos validar isso, se tivermos so 2 registros no banco e ta passando id 99? nao vai ter id 99. vamos fazer um if.
+        if(isset($results[0]) ) ou if(count($results) > 0) {
+
+            $row = $results[0]; // como é array de array, pega na posição 0. pega a primeira linha ou a unica linha. aqui estou atribuindo à variável $row a primeira linha de resultados obtida da consulta, ou seja, o primeiro elemento do array $results. comum fazer isso quando é o caso de buscar um usuario pelo id, isto é, consulta por uma chave primaria unica.
+
+            $this->setIdusuario($row['idusuario']);
+            $this->setDeslogin($row['deslogin']);
+            $this->setDessenha($row['dessenha']);
+            $this->setDtcadastro(new DateTime($row['dtcadastro'])); // fizemos new DateTime pra ficar no formato que é igual do banco de dados
+
+        }
+    }
 }
+
+// agora os atributos já estão preenchidos com as informações que vieram do banco. perceba que no metodo 'loadbyId' nao tem retorno, ele nao ta devolvendo nada pra tela. so alimentamos os atributos, carregamos dados do banco pro objeto. aprendemos o __ToString, q qd dá echo no objeto, ele executa o que ta dentro do __ToString.
+
+public function __toString() {
+    return json_encode(array(
+        "idusuario"=>$this->getIdusuario(),
+        "deslogin"=>$this->getDeslogin(),
+        "dessenha"=>$this->getDessenha(),
+        "dtcadastro"=>$this->getDtcadastro()->format("d/m/Y H:i:s"); // o objeto date time tem o metodo format pra formatar do jeito que eu quero.
+    ));
+}
+
+////////////////
+
+PDO - DAO - LIST -
+Aprenderemos mais sobre listar dados, em vez de passar um parametro e buscar por um usuario determinado, eu posso buscar todos os usuarios de uma determinada tabela ou por alguma condição.
+
+quero trazer uma lista com todos os usuarios q estão na tabela:
+ 
+public static function getList() {
+    $sql = new Sql();
+
+    return $sql->select("SELECT * FROM tb_usuarios ORDER BY deslogin");
+}
+
+o LoadById traz o usuario daquele Id. o getList pegará uma lista de usuários. fizemos getList como metodo static, ja que nao precisamos usar $this no metodo. pq? pq quando usamos this vc ta pegando atributos da classe, vc ta amarrando o método à classe, quando vc nao usa $this, o metodo pode ser usado fora ou dentro da classe, ou seja, static.
+
+// agora, faremos pra buscar um usuario:
+public static function search($login) {
+    $sql = new Sql();
+
+    return $sql->select("SELECT * FROM tb_usuarios where deslogin LIKE :SEARCH ORDER BY deslogin", array( 
+        ':SEARCH'=>"%".$login."%" // aqui, ele vai pegar o que eu digitar dentro de $login, colocar a % antes e depois, e quando eu for enviar pro nosso parametro q foi preparado, vai evitar o SQL injection.
+    )); // ':SEACH' é o identificador
+
+}
+
+// no index.php
+$search = Usuarios::search("ro");
+echo json_encode($search);
+
+// vai mostrar a linha de codigo que tem 'root' pq é onde tem 'ro'.
+// agora vamos obter os dados do usuario autenticado. vamos ter que passar o login e a senha, tem q ser corretos, e ai vai carregar os dados do usuario. nesse caso, como vamos usar o get e set, no contexto do objeto, nao pode ser static, ja q vamos amarrar bastante a classe.
+
+public function login($login, $password) {
+    $sql = new Sql();
+    $results = $sql->select("SELECT * FROM tb_usuarios WHERE deslogin = :LOGIN AND dessenha = :PASSWORD", array(
+        ":LOGIN"=>$login,
+        ":PASSWORD"=>$password
+    ));
+
+    if(count($results) > 0) {
+
+        $row = $results[0]; // como é array de array, pega na posição 0. pega a primeira linha ou a unica linha
+
+        $this->setIdusuario($row['idusuario']);
+        $this->setDeslogin($row['deslogin']);
+        $this->setDessenha($row['dessenha']);
+        $this->setDtcadastro(new DateTime($row['dtcadastro']));
+    }
+    else {
+        throw new Exception("Login e/ou Senha inválidos.");
+    }
+}
+
+no index.php :
+//carrega um usuário usando o login e a senha
+$usuario = new Usuario();
+$usuario->login("root", "12345");
+
+echo $usuario;
+
+///////////////
+
+PDO - DAO - INSERT:
+
+// vamos criar um método para setar os dados, ja que estamos usando varias vezes.
+
+public function setData($data) {
+    $this->setIdusuario($data['idusuario']);
+    $this->setDeslogin($data['deslogin']);
+    $this->setDessenha($data['dessenha']);
+    $this->setDtcadastro(new DateTime($data['dtcadastro']));
+}
+
+agora, vai lá no login e coloca:
+$row = $results[0];
+$this->setData($results[0]);
+
+e onde tiver os dados de setData, substitui por: $this->setData($results[0]);
+
+public function insert() {
+    $sql = new Sql();
+
+    $results = $sql->select("CALL sp_usuarios_insert(:LOGIN, :PASSWORD)", array(
+        ':LOGIN'=>$this->getDeslogin(),
+        ':PASSWORD'=>$this->getDessenha()
+    )); // como estamos usando o mysql, a procedure usamos 'CALL'. vamos ter que criar uma procedure no banco de dados.
+
+    if(count($results[0]) > 0) {
+        $this->setData($results[0]);
+    }
+
+}
+
+// no Banco de dados:
+
+create procedure sp_usuarios_insert (pdeslogin varchar(64), pdessenha varchar(256)) begin insert into tb_usuarios (deslogin, dessenha) values (pdeslogin, pdessenha); select * from tb_usuarios where idusuario = LAST_INSERT_ID(); END$$ // O LAST_INSERT_ID é o ultimo ID inserido que usou uma coluna AUTO_INCREMENT, funçao nativa do mysql.
+ 
+// o 'p' na frente é pra diferenciar dos nomes do campo. oq começa com 'v' é variavel, 'p' é um parametro. pdeslogin e pdessenha é o parametro que enviei. ou por ex vidusuario é a variavel q to usando pra armazenar. com este comando acima, criamos um procedimento. 
+
+// no index.php
+$aluno = new Usuario();
+
+$aluno->setDeslogin("aluno");
+$aluno->setDessenha("@alun0");
+
+$aluno->insert(); 
+
+echo $aluno;
+// não temos o id e data de castro, mas o insert vai trazer, pq ta fazendo via procedure.
+
+poderia deixar mais facil ainda construindo construtor no 'Usuario.php':
+public function __construct($login = "", $password = "") { // colocando = "" ele aceita mesmo que tenha nada, se tiver nada ele joga como nada
+    $this->setDeslogin($login);
+    $this->setDessenha($password);
+} 
+
+em aluno.php
+$aluno = new Usuario("aluno", "@alun0");
+$aluno->insert();
+echo $aluno;
