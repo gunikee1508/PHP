@@ -1226,7 +1226,7 @@ class Usuario {
 
         $results = $sql->select("SELECT * FROM tb_usuarios WHERE idusuario = :ID", array(
             ":ID"=>$id
-        )); // chamando o método 'select'. select pelo id do usuario, o id do usuario é chave primaria, ou seja, vai me retornar uma linha só. podemos colocar o :ID, é a identificaçao, so tem q ser igualzinho. coloquei um array, que são os nosssos parametros, que colocamos dentro da nossa classe 'sql' no método 'select' lá. ":ID"=>$id é basicamente chave=>valor. :ID é a identificação do parametro. o valor dele é minha variavel $id que to aqui recebendo no meu método. 
+        )); // chamando o método 'select'. select pelo id do usuario, o id do usuario é chave primaria, ou seja, vai me retornar uma linha só. podemos colocar o :ID, é a identificaçao, so tem q ser igualzinho. coloquei um array, que são os nosssos parametros, que colocamos dentro da nossa classe 'sql' no método 'select' lá. ":ID"=>$id é basicamente chave=>valor. :ID é a identificação do parametro. o valor dele é minha variavel $id que to aqui recebendo no meu método. :ID terá o valor que $id tem.
 
         // so precisamos validar isso, se tivermos so 2 registros no banco e ta passando id 99? nao vai ter id 99. vamos fazer um if.
         if(isset($results[0]) ) ou if(count($results) > 0) {
@@ -1373,3 +1373,406 @@ em aluno.php
 $aluno = new Usuario("aluno", "@alun0");
 $aluno->insert();
 echo $aluno;
+
+//////////////
+
+PDO - DAO - DELETE -
+
+no Usuario.php:
+public function delete() {
+    $sql = new Sql();
+
+    $sql->query("DELETE FROM tb_usuarios WHERE idusuario = :ID", array(
+        ":ID"=>$this->getIdusuario()
+    )); // vamos passar nosso id nos parametros...
+
+    // Depois que apaga, vamos refletir no banco
+
+    $this->setIdusuario(0);
+    $this->setDeslogin("");
+    $this->setDessenha("");
+    $this->setDtcadastro(new DateTime());
+    // /\ botando tudo sem valor, limpando as propriedades do objeto apos a exclusão.
+
+}
+
+//////////////
+
+MANIPULANDO ARQUIVOS -
+Gerenciamento de arquivos -
+é poder criar, gerenciar, mover, pastas e diretorios e arquivos fisicos. entao posso usar o servidor onde ta rodando meu php como um repositorio. hoje vamos ver com diretorio/pasta.
+
+o primeiro arquivo irá verificar se o diretorio existe. se não existir, criaremos o diretório. 
+
+$name = "images"; // é o nome de um diretorio de imagens, por ex
+// como verifico se o diretorio existe ou não? existe uma função chamada 'is_dir'
+if(!is_dir($name)) { // se o nome de tal variavel não for um diretorio.
+    mkdir($name); // cria um diretorio com esse nome de $name.
+    echo "Diretorio $name criado com sucesso";
+}
+else {
+    rmdir($name); // aqui, ele vai remover
+    echo 'Diretório já existente: ' .$name. ' e foi removido. ';
+}
+
+// e se precisarmos ler os arquivos dentro de um diretorio especifico? pra pedir pro php ler nao so um arquivo/diretorio especifico, mas tudo que há dentro dele. a ideia aqui agora é usar uma funçao chamada 'scandir'
+
+em outro arquivo já:
+<?php
+
+$images = scandir("images"); // o diretorio 'images' tem que existir
+var_dump($images);
+
+$data = array();
+
+foreach($images as $img) {
+    if(!in_array($img, array(".", ".."))) 
+    { // a função in_array precisa do neddle e do haystack. o neddle é onde que voce ta procurando, quem é o alvo que voce quer que procure. o haystack sao as opçoes mesmo, é um array. mas o que a gente quer é não achar esses caras, por isso o '!'. entendamos o in_array: ele faz uma busca dentro de um array. no caso, se não existir '.' nem '..' no array, ai me interessaria. 
+
+        $filename = "images" . DIRECTORY_SEPARATOR . $img; // concatenando com o nome do arquivo, q é $img
+
+        $info = pathinfo($filename);
+
+        var_dump($info);
+
+        array_push($data, $info);
+    }
+}
+
+echo json_encode($data);
+
+// podemos juntar toda essa informação de cima em uma variavel e converter em JSON, por isso criei o array $data la em cima, 'data' de dados.
+
+// e se eu quiser ver, por ex, o tamanho do meu arquivo? dentro da variavel $info, vou criar uma chave de nome 'size' que vai pegar o tamanho do arquivo. vou botar a data de modificação do arquivo tbm.
+
+foreach($images as $img) {
+    if(!in_array($img, array(".", ".."))) 
+    { // a função in_array precisa do neddle e do haystack. o neddle é onde que voce ta procurando, quem é o alvo que voce quer que procure. o haystack sao as opçoes mesmo, é um array. mas o que a gente quer é não achar esses caras, por isso o '!'. entendamos o in_array: ele faz uma busca dentro de um array. no caso, se não existir '.' nem '..' no array, ai me interessaria. 
+
+        $filename = "images" . DIRECTORY_SEPARATOR . $img; // concatenando com o nome do arquivo, q é $img
+
+        $info = pathinfo($filename);
+
+        $info["size"] = filesize($filename); // mostra o tamanho em bytes.
+
+        $info["modified"] = date("d/m/Y H:i:s", filemtime($filename));
+
+        $info["url"] = "http://localhost/arquivos/".str_replace("\\", "/"), ($filename); // como tamo sando DIRECTORY_SEPARATOR, a barra fica ao contrario se nao colocar str_replace. tem q colocar \\ pq é a barra que quero inverter, e é um escape, pela barra que quero trocar.
+        
+        var_dump($info);
+
+        array_push($data, $info);
+    }
+}
+
+?>
+
+//////////////////
+
+criar arquivos com fopen() 
+
+$file = fopen("log.txt", "w+"); // a função fopen() te pede 2 parametros, o primeiro é o caminho do arquivo, qual o endereço do arquivo? o segundo é como voce quer controlar esse arquivo? ler, alterar? conteudo que tiver nele, quer q seja removido ou alimentar? vamos criar o arquivo 'log.txt' e o w+ é que voce vai escrever dentro do arquivo, e o + é com leitura, entao, vai abrir o arquivo para leitura e escrita. por isso a variavel $file, nesse momento, é um resource, q faz referencia a um arquivo certo.
+
+fwrite($file, date("Y-m-d H:i:s") . "\r\n"); // o primeiro parametro q espera é um resource, isto é, qual o arquivo/manipulador que estou usando. e o segundo parametro são os dados que quero colocar dentro do arquivo.
+
+// agora, precisamos liberar da memoria, fechar o manipulador, q tbm espera um resource, um arquivo/manipulador.
+fclose($file);
+
+echo "Arquivo criado com sucesso";
+
+// interessante que isso fica no servidor. não fica no pc do usuario, então posso controlar qualquer informaçao que eu quiser. obs: pra pular dentro desse arquivo, é \r e \n. \r é de retorno e \n pra nova linha. \t é tabulaçao.
+
+// se fosse a+, o conteudo será preservado, o ponteiro movido pro final do arquivo. e vai ser adicionado a nova dat ano final.
+
+// como converter os dados direto do BD em um CSV?
+criei um arquivo bd.php na pasta de arquivos. puxei o config.php e a pasta class do DAO.
+<?php
+
+require_once("config.php");
+
+$sql = new Sql();
+
+$usuarios = $sql->select("SELECT * FROM tb_usuarios ORDER BY deslogin");
+
+print_r($usuarios);
+
+?>
+// eai, ao ver, como converter isso em csv? 
+arquivo csv é um arquivo formatado. cada coluna eh um tipo de info, assim como no BD. e ai, normalmente ficam separadas por virgula. e ai vao respeitar essa ordem. o separador normalmente é a virgula, sempre q quebra a virgula é outro registro.
+
+// criemos outro arquivo csv na pasta. mas antes, precisamos criar um header no arquivo bd.php
+no arquivo bd.php:
+require_once("config.php");
+
+$sql = new Sql();
+
+$usuarios = $sql->select("SELECT * FROM tb_usuarios ORDER BY deslogin");
+
+print_r($usuarios);
+
+$headers = array(); 
+
+foreach($usuarios[0] as $key => $value) {
+    array_push($headers, ucfirst($key));
+} // foreach na primeira linha dos dados dos nossos usuarios, e entao fiz foreach pra passar coluna por coluna, vai ter o numero da coluna, a chave (key) e o valor. e botamos ucfirst($key) pra deixar a primeira letra como maiuscula.
+
+echo implode(",", $headers); // implode é transformar array em string, e o separador vai ser a virgula.
+
+// pq colocamos em array? vamos ter q colocar o separador q é a vírgula. pra isso, vamos usar agora o implode.
+echo implode(",", $headers); // implode é transformar array em string, e o separador vai ser a virgula.
+
+
+-------> // vamos pros dados agora, o cabeçalho ta pronto, vamos colocar dentro do nosso arquivo de usuarios csv.
+no arquivo bd.php:
+require_once("config.php");
+
+$sql = new Sql();
+
+$usuarios = $sql->select("SELECT * FROM tb_usuarios ORDER BY deslogin");
+
+print_r($usuarios);
+
+$headers = array(); 
+
+foreach($usuarios[0] as $key => $value) {
+    array_push($headers, ucfirst($key));
+} 
+
+$file = fopen("usuarios.csv", "w+"); // se nao existir, será criado.
+
+fwrite($file, implode(", ", $headers)); // coloquei o implode aqui agora, q é o que eu vou escrever dentro do arquivo.
+
+// vamos alimentar os dados.
+
+foreach($usuarios as $row) { // AQUI É UM FOREACH NAS LINHAS!!!!!!!!! 
+    // mas, lembre que precisamos juntar os dados por linha?  
+    $data = array(); 
+    // agora vamos criar um foreach para descobrirmos cada um dos dados, cada uma das linhas
+    foreach($row as $key => $value) { // AQUI É UM FOREACH NOS CAMPOS!!!!!! Quando entra na primeira linha ele faz as colunas. na segunda linha, as outras colunas
+        array_push($data, $value);
+    }
+
+    fwrite($file, implode(", ", $data) . "\r\n");
+}
+// /\ pra cada linha que eu tiver no meu banco de dados, se eu tiver 5 registros, ele vai rodar 5 vezes. ele vai pegar o nome dessas informaçoes e vai jogar dentro da variavel data. fizemos array dentro de outro array pq estamos trabalhando com PDO, e no statement prepare ele traz um array dentro de outro.
+
+fclose($file); // não se esqueça de fechar o arquivo ao final.
+
+///////////////
+
+Excluindo arquivos -
+Num novo arquivo -
+$file = fopen("teste.txt", "w+"); // o primeiro parametro  é o nome do arquivo. o segundo é oq fazer.
+
+fclose($file);
+
+unlink("teste.txt"); // obs: $file é a variável resource. ela tá apontando pro arquivo no modulo que voce abriu e no ponteiro que voce criou. unlink serve para excluir/remover um arquivo do sistema de arquivos.
+
+echo "Arquivo removido com sucesso.";
+
+dentro de um outro arquivo.
+if (!is_dir("images")) mkdir(images);
+
+foreach(scandir("images") as $item) {
+    if(!in_array($item, array(".", ".."))) {
+        unlink("images/" . $item); // $item nome do nosso arquivo q ele encontrou a partir do scandir.
+    }
+}
+/\ com isso, ele vai apagar um diretorio inteiro. scandir vai ler todo o diretorio. obs: so vai permitir excluir arquivos que tenham a mesma permissao que o servidor web tem.
+
+/////////////////
+
+Lendo conteúdo de arquivos -
+fgets -> fread x fgets, o fgets lê linha por linha do arquivo. o fread tem q passar quantos bytes quer ler do arquivo. 350 bytes = 350 caracteres.
+
+num novo arquivo:
+
+$filename = "usuarios.csv";
+
+if(files_exists($filename)) {
+    $file = fopen($filename, "r");
+
+    $headers = explode(",", fgets($file)); // usei explode pra transformar em array.
+
+    var_dump($headers);
+}
+
+// blz, fgets pega a 1o linha, mas agora ele ta na 2 linha, como faço pra rodar tudo? criemos while, enquanto tiver linha, ele roda.
+
+if(files_exists($filename)) {
+    $file = fopen($filename, "r");
+
+    $headers = explode(",", fgets($file)); // usei explode pra transformar em array.
+
+    $data = array();
+
+    while($row = fgets($file)) { // se retornar algo, continua no while, senao, ele sai do while.
+        // basicamente aqui dentro temos que fazer o processo inverso de quando fizemos em csv, isto é, fazer par chave valor.
+        $rowData = explode(",", $row);
+        $linha = array();
+
+        for($i = 0; $i < count($headers); $i++) {
+            $linha[$headers[$i]] = $rowData[$i]; // o 'i' aqui valendo '0' eu estaria pegando a posiçao 0 do headers, e a posiçao 0 do headers é o idusuario (no caso da video-aula).
+        }
+        // quero adicionar essa variavel linha ao meu data principal, que eles vão ter todos os registros. meu array $linha é um array de chave e valor
+        array_push($data, $linha); 
+    }  
+    fclose($file);
+    echo json_encode($data);
+}
+
+/\ trazemos um arquivo do csv e botamos no PHP. geramos um json.
+
+---------
+Agora, usando uma função diferente file_get_contents. Ela le o arquivo em disco igual o fopen, mas e se fosse uma imagem? Se eu precisar mandar como texto? Ou mandar como API para um lugar? Hoje, tem o Base64, que converte binário em string. Mas tem um formato especifico, qual é? é colocar data:tipo do arquivo precisa informar, q seria o minitype. por ex: png é image.png, jpg é image.jpg.
+
+Em um novo arquivo:
+$filename = "logo.png"; // é uma imagem q for que eu tenho q ter, com esse nome. pode ser a logo do curso.
+
+$base64 = base64_encode(file_get_contents($filename)); // essa função lê o conteúdo de um arquivo, lê inteiro. basta passar o nome do arquivo, mas ele passa binario, mas quero em string, base64, ai eu uso a função base64_encode.
+
+echo "data: image/png;base64," . $base64;
+// /\ vai ver que vai gerar um codigo string base64 grandao, se ao copiar tudo e colar na URL, ele vai abrir a imagem.
+
+// _____> mas vamos criar dinamico pra nao ter que especificar jpg, png, etc. 
+
+$filename = "logo.png"; 
+
+$base64 = base64_encode(file_get_contents($filename)); 
+
+$fileinfo = new finfo(FILEINFO_MIME_TYPE); // funçao finfo é para obter informaçoes sobre o tipo de um arquivo.
+
+$mimetype = $fileinfo->file($filename);
+
+$base64encode = "data:" . $mimetype . " base64," . $base64;
+
+em HTML agora, fora da tag php:
+<a href = "<?php=$base64encode?" target="_blank">Link para imagem</a> // n preciso colocar echo base64encode, so ?=$... ja basta
+<img src= "<?php=$base64encode?">
+
+/\ binario convertido em texto.
+
+//////////////////////////
+
+Como fazer upload de arquivos -
+php faz upload de arquivos para o servidor.
+em um novo arquivo:
+
+antes do php mesmo, precisamos de um campo pra selecionar o arquivo a ser enviado.
+<form action="" enctype="multipart/form-data"> // o enctype permite que vc coloca o tipo de informaçao que voce está enviando. por padrão, o formulario envia texto/string. mas agr vamos enviar dados por meio do formulario. por isso multipart/form-data, q significa: tudo q tiver dentro da tag form serão enviados como dados binarios. entao sao dados q fogem do padrao string. se não colocar isso, o upload do lado do php nao vai funcionar, não vai entender o arquivo como fisico.
+
+    <input type="file" name="fileUpload">
+
+    <button type="submit">Send</button>
+
+
+</form>
+
+<?php
+
+if ($_SERVER["REQUEST_METHOD"] === "POST") {  // o método do formulario
+// o primeiro passo é recuperar um arquivo que foi enviado lá. quando os dados são enviados via post, usamos $_POST para STRINGS. no caso do arquivo form-data, usamos $_FILES q é outra variavel superglobal usada pra lidar com arquivos que são enviados através de um formulario HTML, mas serve pra tratar especificamente arquivos enviados para upload. como funciona qd vc envia o arquivo de um formulario para um servidor? na hr q selecionar zip, ou imagem, na hr de enviar, o php precisa ter uma pasta temporaria no servidor pra transferencia de pacotes. 
+
+    $file = $_FILES["fileUpload"]; // é um array superglobal, e dentro, vai o nome do meu input type file. como colocamos fileUpload, vai esse mesmo.
+
+    if($file["error"]) {
+        throw new Exception("Erro: " . $file["error"]); // o nome do erro ta nesse file error ai.
+    }
+
+    // vamos criar um diretorio a parte para receber os meus arquivos, meus uploads. importante ser um diretorio a parte pq ele vai ter permissão de escrita.
+
+    $dirUploads = "uploads";
+    // verificaçao direto no php se o diretorio existe, senao existir, criar:
+    if(!is_dir($dirUploads)) {
+        mkdir($dirUploads); // se colocar uma ',' dá pra por a permissao que a pasta vai ter, igual linux, tipo "650". mas por padrão, se colocar nada, ja tem permissão padrão de ESCRITA.
+    }
+
+    // aqui é o upload propriamente dito
+    if(move_uploaded_file($file["tmp_name"], $dirUploads . DIRECTORY_SEPARATOR . $file["name"])){ // essa é a função, ela vai receber primeiro o arquivo temporario do seu servidor, e pra onde ele vai, ou até mesmo com qual nome ele vai. se o upload for com sucesso, essa funçao te retorna true, se der erro retorna false. por isso fazemos um if. os parmaetros são filename e destination. move_uploaded_file move do diretorio temporario do servidor para uma pasta que você criou, so tenha certeza se a pasta q voce criou tem a permissão necessaria pra fazer o upload.
+
+        echo "Upload realizado com sucesso!";
+
+    } else {
+
+        throw new Exception("Não foi possivel realizar o upload.", 1);
+
+    }
+
+}
+
+// agora, ao enviar um arquivo, irá criar um diretorio 'uploads' com o arquivo que voce enviou
+
+
+?>
+
+//////////////
+
+Downloads de arquivos com file_get_contents:
+Download via programaçao. como posso passar uma URL de uma determinado arquivo para o PHP, o php entende q é um arquivo e permite q vc reconstrua uma copia dele via programação.
+
+iremos usar uma função que ela PEGA o conteúdo de um arquivo.
+
+em uma pasta chamada 'donwload', criemos um novo arquivo:
+
+<?php
+
+$link = "https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png"; // colocamos o link de imagem qualquer, mas colocamos dentro da variavel so pra facilitar mesmo. 
+
+$content = file_get_contents($link); // é o conteudo da imagem. é o endereço do arquivo.
+
+// precisamos interpretar. vem em conteudo bruto. mas nao ta formatado, nao sabe que é uma imagem. então, vamos usar o parse_url para transformar o que tá vindo pela url em um arquivo real. e vamos guardar na variavel $parse.
+
+$parse = parse_url($link);
+
+//var_dump($parse); // verá que terá o scheme q é https, o host q é www.google.com.br, o path q é o caminho, isto é, tudo depois de /images
+
+pra eu pegar só a parte do 'path', façamos:
+$basename = basename($parse["path"]); // nome base da minha variavel parse na chave 'path', q vai trazer o caminho pra gente.
+
+// agora precisamos criar esse arquivo com conteudo dele no disco do servidor. vamos criar com fopen, se ele nao existir, ele cria com aquele sinal de '+', tipo 'w+'.
+
+$file = fopen($basename, "w+"); // guardando dentro da variavel $file. é nessa linha em que to gerando o nome do arquivo.
+
+fwrite($file, $content); // aqui geramos a copia do arquivo (no caso, a imagem), aqui estamos escrevendo no disco rigido.
+
+fclose ($file); // apos escrever o arquivo, boa pratica é fechar
+?>
+
+<img src="<?=$basename?>"> // na imagem nao to chamando link, é só o basename, isto é, ta vindo da propria pasta do servidor, a imagem do google q será recriada no diretorio
+
+// /\ ao executar, vera a imagem do google, mas é da propria pasta
+
+//////////////
+
+Movendo um arquivo -
+vamos mover um arquivo de um lugar para o outro usando a função 'rename'
+
+$dir1 = "folder_01";
+$dir2 = "folder_02";
+
+if(!is_dir()) mkdir($dir1);
+if(!is_dir()) mkdir($dir2);
+
+$filename = "README.txt";
+
+if(!file_exists($dir1 . DIRECTORY_SEPARATOR . $filename)) {
+    $file = fopen($dir1 . DIRECTORY_SEPARATOR . $filename, "w+");
+
+    fwrite($file, date("Y/m/d H:i:s"));
+
+    fclose($file);
+}
+
+rename($dir1 . DIRECTORY_SEPARATOR . $filename, $dir2 . DIRECTORY_SEPARATOR . $filename); // o primeiro parametro é o nome do arquivo original, onde ele ta, e o segundo parametro é pra onde ele vai e com que nome. a forma como nos armazenamos arquivos nos discos são apenas ponteiros, isto é, direção de onde eles estão. aqui nessa linha de comando é: origem, destino
+
+echo "Arquivo movido com sucesso!";
+
+rename então move o arquivo ou permite renomear se continuar na mesma pasta.
+
+///////////////
+
+cURL - 
+O cURL solucionou o problema para APIs, antes tinham bibliotecas escritas em todas as linguagens. ex: se o google tinha uma biblioteca para as pessoas, ele tinha q ter em php, pyton, java, etc. se eu quisesse usar o google maps mas usar o ponteiro, usar algumas rotas, mas pra isso eu tinha q ter a versão java, php, etc. pensando nisso, disponibilizou-se rotas API, isto é, Rest API. solicita esse endereço aqui passando esses parametros via get, post ou delete, etc. o cURL resolveu isso, pq a comunicaçao podia ser independente doq for. agora, se tivermos uma API de pagamento, por exemplo, do paypal, eles nos oferecem uma URL e nos devolvem um JSON nesse formato. se precisarem mudar, etc, essa parte final, não vai mudar. continua mesma url, mesmo json. se precisarem mudar, vão mudar internamente. meu sistema conversa com aquela URL e consome as informaçoes naquele formato. 
+
+vamos ver o webservice do ViaCEP, q é gratuito. vamos lá e ver o retorno em JSON.
+lá tem o json URL: viacep.com.br/ws/01001000/json/ // aqui, o numero troca-se pelo CEP.
