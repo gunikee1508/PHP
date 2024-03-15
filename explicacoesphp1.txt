@@ -1482,7 +1482,7 @@ echo "Arquivo criado com sucesso";
 
 // interessante que isso fica no servidor. não fica no pc do usuario, então posso controlar qualquer informaçao que eu quiser. obs: pra pular dentro desse arquivo, é \r e \n. \r é de retorno e \n pra nova linha. \t é tabulaçao.
 
-// se fosse a+, o conteudo será preservado, o ponteiro movido pro final do arquivo. e vai ser adicionado a nova dat ano final.
+// se fosse a+, o conteudo será preservado, o ponteiro movido pro final do arquivo. e vai ser adicionado a nova data no final.
 
 // como converter os dados direto do BD em um CSV?
 criei um arquivo bd.php na pasta de arquivos. puxei o config.php e a pasta class do DAO.
@@ -1776,3 +1776,280 @@ O cURL solucionou o problema para APIs, antes tinham bibliotecas escritas em tod
 
 vamos ver o webservice do ViaCEP, q é gratuito. vamos lá e ver o retorno em JSON.
 lá tem o json URL: viacep.com.br/ws/01001000/json/ // aqui, o numero troca-se pelo CEP.
+
+<?php
+
+$cep = "71070520"
+$link = "https://viacep.com.br/ws/$cep/json/";
+
+$ch = curl_init($link); // inicializa uma sessão cURL
+
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1); // primeiro é a biblioteca que a gente iniciou. o segundo parametro é o retorno que a gente espera. o terceiro parametro é se vc quer ou não a resposta de volta, é true ou false (1 ou 0).
+
+curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0); // se não colocar o CURLOPT_SSL_VERIFYPEER, a chamada do cURL não vai funcionar, só iria funcionar se fosse HTTP
+
+// depois das opçoes, agora temos que ter nossa resposta:
+$response = curl_exec($ch); 
+
+// agora, temos que fechar/liberar a conexão q já terminamos
+curl_close($ch);
+
+//ele veio como JSON de retorno, agora queremos q volte como array:
+$data = json_decode($response, true);
+
+print_r($data);
+
+print_r($data["localidade"]); // vai vir so o nome da cidade no array no indice/chave localidade
+
+// /\ agora retorna em ARRAY.
+
+/////////////////
+
+Cookies -
+Existe um local um pouco melhor q cookies, q é o local storage. Simplesmente diz pro php pra gravar o cookie na maquina do usuario e voce é obrigado a dizer quando aquele arquivo sai da máquina do usuario, pq basicamente vc ta gravando um arquivo na maquina do usuario, voce tem q dizer tbm quando o cookie expira. se vc não colocar uma data, na hora que fechar o navegador, o cookie morre. como gravar o cookie e como recuperar?
+pra definir cookie é setcookie.
+
+$data = array(
+    "empresa"=>"Hcode"
+);
+
+setcookie("NOME_DO_COOKIE", json_encode($data), time() + 3600); // primeiro parametro é o nome do cookie, o segundo parametro é o que de fato voce quer armazenar, os dados no caso. as informaçoes de $data vou gravar dentro desse cookie temporario, em formato json. o terceiro parametro é definir quanto tempo voce quer que o cookie dure, senão, se fechar o navegador, o cookie vai demorar, até se reiniciar o PC o cookie pode durar. o cookie é persistente. o bizu é navegador anonimo, q mesmo que cookie persistente, ele morre. mesmo que seja em tempo, é tempo em timestamp.
+
+echo "OK";
+
+// no chrome, ao dar f12, vai em application, e la na esquerda tem 'cookies', que mostra os cookies gravados.
+
+// agora, como recuperar um cookie caso ele exista?
+// vejamos se um cookie existe:
+if(isset($_COOKIE["NOME_DO_COOKIE"])) { // superarray e o nome do cookie
+    $obj = var_dump(json_decode($_COOKIE["NOME_DO_COOKIE"])); // salvei em objeto, não coloquei 'true' no decode e ai veio em objeto.
+    echo $obj->empresa; // pra acessar o atributo 'empresa' no objeto'
+} 
+
+////////////
+
+TRATAMENTO DE ERROS TRY E CATCH -
+try tenta, o catch 'captura', isto é, se deu algum erro ele vai pra lá.
+
+<?php
+
+try {
+
+    throw new Exception("Houve um erro", 400); // esse numero é o numero do erro, vc pode se localizar atraves dele.
+
+} catch (Exception $e) { // e esse $e é com o nome que eu quiser pra armazenar, pra armazenar a exceção.
+    echo json_encode(array(
+        "message"=>$e->getMessage(),
+        "line"=>$e->getLine(),
+        "file"=>$e->getFile(),
+        "code"=>$e->getCode() // esses métodos getmessage, getline etc são métodos que já existem internamente dentro do exception.
+    ));
+}
+
+
+
+?>
+
+// o try e catch tem mais um bloco q não é obrigatorio mas vc pode usar. 
+criar um bloco pra simular erro em tempo de execuçao:
+se o usuario na hora de enviar não respeitou o que mandamos?
+
+function trataNome($name) {
+    if(!$name) { // se o $name vier vazio ou vier nada
+        throw new Exception("Nenhum nome foi informado", 1);
+    }
+
+    echo ucfirst($name)."<br/>"; 
+}
+
+try {
+
+    trataNome("João");
+    trataNome("");
+
+} catch(Exception $e) {
+
+    echo $e->getMessage();
+
+} finally { // e tem o bloco 'finally', que independente se executar o try ou catch, ele sempre vai executar por ultimo o bloco finally.
+    echo "Executou o bloco Try";
+}
+
+//////////////
+
+Tratando erros -
+Existem outras ferramentas pra tratamento de erros pra contornar, neste caso não usaremos o throw new exception. temos os warnings e os notices. vamos ver um que, pode acontecer o erro, se acontecer, vc aborta e executa uma função.
+
+// funçao pra manipular os erros
+function error_handler($code, $message, $file, $line) {
+    echo json_encode(array(
+        "code"=>$code,
+        "message"=>$message,
+        "file"=>$file,
+        "line"=>$line
+    ));
+}
+
+set_error_handler("error_handler"); // ele espera o nome da funçao que vai manipular esse erro. como ele espera o nome da funçao, e nao a funçao em si, tem-se que colocar em aspas duplas, pq é uma string.
+
+$total = 100 / 0; // vamos estourar um erro aqui, q é impossivel dividir algo por 0.
+
+// agora com warnings:
+
+error_reporting(E_ALL & ~E_NOTICE); // aqui voce escreve o que vc quer que apareça. vai sobrescrever oq tá dentro do php.ini. se eu colocar a constante E_ALL eu digo que quero mostrar todos os erros e não quero mostrar todas as noticias (o ~ é a negação)
+
+$nome = $_GET["nome"];
+
+echo $nome;
+
+na url coloquemos:
+http://localhost/arquivos/dir2.php?nome="luiz"
+// vai mostrar normal, nao tem erro
+
+////////////////
+
+Gerando dependencias com o Composer
+O composer é um gerenciador de dependencias do php, por ex, se vc fez um projeto em php q depende de uma lib. via composer vc tem um gerenciamneto de configuraçao dizendo tipo 'quem levar meu projeto precisa desse cara pra ser configurado etc'. Ele é baseado em JSON. É um controle de dependencias, ele organiza seu projeto, vai ter seu autoload padrão pra carregar as classes e vai carregar somente as necessarias pra dependencias dela, vc tbm pode pegar suas classes, colocar no github pra outras pessoas usarem, etc. 
+
+no cmd digito: composer init
+
+ou crio pasta 'composer' em htdocs e abro um git bash.
+
+agora, vai perguntar o nome do pacote, no caso, <vendor>/<name>. o vendor pode ser o nome de usuario q vai ser unico no github, ou nome da empresa, enfim. o nome do vendor precisa ser unico, tem que ser seu. ex: hcodebr/composer -> vai pedir 'descrição', ai é ideal vc colocar algo mais formal. (não pode ter um repositorio com esse nome). o terceiro é o autor 'author', vc pode dar so enter se quiser, ou 'n' se pular. depois vai pedir estabilidade. ou deixa vazio para dizer que não tem uma versão específica estável. ou stable. ou 'rc' q é de release candidate(primeira versao), beta, alfa ou dev. (a ordem seria dev, alfa, beta, release candidate [rc] e depois stable ). depois pede o tipo de pacote, coloquemos 'project'. e depois pede a licença dizendo que vc que criou, etc. depois, pede as dependencias, isto é, doq ele depende ou não, do projeto e do desenvolvedor. ele vai mostrar como fica o JSON, e depois vai criar o arquivo JSON dentro do 'Composer' em htdocs.
+
+dentro do require q tem no arquivo composer.json , posso colocar as dependencias que o projeto precisa pra funcionar. coloquemos "monolog/monolog", só por exemplo, isto é, nome do vendor e o nome do repositorio, e em seguida o nome da versão que vc espera que o composer baixe, ficando: "monolog/monolog":"1.0.*", vai baixar qualquer uma de 1.0 pra cima, pode ser 1.1.1 ou 1.1.2, ou 1.1.3, etc.
+
+agora, no git, uso "composer install", que vai ler o arquivo json e vai procurar o que é dependencia que ainda não existe dentro do repositorio, mas ele so funciona na primeira vez que executa. na 2 vez, se vc adicionar ou remover dependencia, vai precisar usar outro comando, o 'composer update'.
+
+dentro da pasta, vai ter o arquivo 'composer.lock', esse arquivo vai ter as informações do download que ele fez, dos repositorios q ele baixou, etc, nao precisa mexer nele. e vai criar a pasta 'vendor' tbm, que vai ter todos as pastas com todos os vendors que ele mandou baixar, que ele tem como dependencia. então, 'monolog' tbm pode ter suas dependencias e ter outras pastas que você não pediu, de acordo com a funcionalidade que ele tem pra poder funcionar.
+
+agora, dentro do vendor tem o 'autoload.php', que com ELE você tem que se preocupar. ele é o autoload do composer, isto é, ele vai ter a inteligencia de carregar automaticamente assim que voce fizer o new, passando o namespace e o nome da classe que voce quer usar. o autoload do composer é um autoload mais polido, ele segue um padrão de uma entidade que segue as condutas de boa pratica. o php-fig.org define o que são boas praticas de programaçao, pra cada vez mais termos um php mais profissional. 
+
+se vc precisar de outra dependencia que for externa, vc vai informar no seu php no seu composer.json, e vc digita o composer install ou o update e ja fica td certo.
+
+///////////////
+
+Envio de emails com PHPMailer
+Vamos baixar o PHPMailer com o Composer.
+
+Dentro do htdocs, criamos nova pasta chamada 'email'. dentro dela, vamos criar um novo arquivo chamado 'composer.json', escrevamos dentro:
+{
+    "require":{ // aqui precisamos colocar qual o vendor e qual o nome do phpmailer. podemos descobrir isso no github do projeto.
+        "phpmailer/phpmailer": "^6.9.1" // Dentro do github do projeto tava la o vendor e o nome do projeto, versoes acima de 6.9.1
+    }
+}
+
+
+/\ // apos salvar, agora basta abrir git bash na pasta e digitar 'composer update' pra baixar. criou os arquivos vendor, composer.lock na pasta.
+vamos criar um arquivo index.php na pasta agora e digitar:
+
+<?php
+
+require_once("vendor/autoload.php"); 
+
+// se vc ja tiver hospedagem de email pra enviar email, vc vai ter as configuraçoes de SMTP. nessa config vai ter a porta de onde o email vai sair e o endereço de IP do e-mail. servidor web != servidor de e-mail. de email vc vai ter um software especifico pra ter as portas pra receber e enviar email. 
+// em nosso exemplo aqui vamos usar do gmail, basta ter conta de usuario no gmail. 
+// o proprio phpmailer tem um exemplo, vai no github > examples > gmails.php
+
+
+//Create a new PHPMailer instance
+$mail = new PHPMailer();
+
+//Tell PHPMailer to use SMTP
+$mail->isSMTP();
+
+//Enable SMTP debugging
+//SMTP::DEBUG_OFF = off (for production use)
+//SMTP::DEBUG_CLIENT = client messages
+//SMTP::DEBUG_SERVER = client and server messages
+$mail->SMTPDebug = SMTP::DEBUG_SERVER;
+
+//Set the hostname of the mail server
+$mail->Host = 'smtp.gmail.com';
+//Use `$mail->Host = gethostbyname('smtp.gmail.com');`
+//if your network does not support SMTP over IPv6,
+//though this may cause issues with TLS
+
+//Set the SMTP port number:
+// - 465 for SMTP with implicit TLS, a.k.a. RFC8314 SMTPS or
+// - 587 for SMTP+STARTTLS
+$mail->Port = 465;
+
+//Set the encryption mechanism to use:
+// - SMTPS (implicit TLS on port 465) or
+// - STARTTLS (explicit TLS on port 587)
+$mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+
+//Whether to use SMTP authentication
+$mail->SMTPAuth = true;
+
+//Username to use for SMTP authentication - use full email address for gmail
+$mail->Username = 'username@gmail.com';
+
+//Password to use for SMTP authentication
+$mail->Password = 'yourpassword';
+
+//Set who the message is to be sent from
+//Note that with gmail you can only use your account address (same as `Username`)
+//or predefined aliases that you have configured within your account.
+//Do not use user-submitted addresses in here
+$mail->setFrom('from@example.com', 'First Last');
+
+//Set an alternative reply-to address
+//This is a good place to put user-submitted addresses
+$mail->addReplyTo('replyto@example.com', 'First Last');
+
+//Set who the message is to be sent to
+$mail->addAddress('whoto@example.com', 'John Doe');
+
+//Set the subject line
+$mail->Subject = 'PHPMailer GMail SMTP test';
+
+//Read an HTML message body from an external file, convert referenced images to embedded,
+//convert HTML into a basic plain-text alternative body
+$mail->msgHTML(file_get_contents('contents.html'), __DIR__);
+
+//Replace the plain text body with one created manually
+$mail->AltBody = 'This is a plain-text message body';
+
+//Attach an image file
+$mail->addAttachment('images/phpmailer_mini.png');
+
+//send the message, check for errors
+if (!$mail->send()) {
+    echo 'Mailer Error: ' . $mail->ErrorInfo;
+} else {
+    echo 'Message sent!';
+    //Section 2: IMAP
+    //Uncomment these to save your message in the 'Sent Mail' folder.
+    #if (save_mail($mail)) {
+    #    echo "Message saved!";
+    #}
+}
+
+//Section 2: IMAP
+//IMAP commands requires the PHP IMAP Extension, found at: https://php.net/manual/en/imap.setup.php
+//Function to call which uses the PHP imap_*() functions to save messages: https://php.net/manual/en/book.imap.php
+//You can use imap_getmailboxes($imapStream, '/imap/ssl', '*' ) to get a list of available folders or labels, this can
+//be useful if you are trying to get this working on a non-Gmail IMAP server.
+function save_mail($mail)
+{
+    //You can change 'Sent Mail' to any other folder or tag
+    $path = '{imap.gmail.com:993/imap/ssl}[Gmail]/Sent Mail';
+
+    //Tell your server to open an IMAP connection using the same username and password as you used for SMTP
+    $imapStream = imap_open($path, $mail->Username, $mail->Password);
+
+    $result = imap_append($imapStream, $path, $mail->getSentMIMEMessage());
+    imap_close($imapStream);
+
+    return $result;
+}
+
+// /\ o método IsSMTP é um metodo q prepara o phpmailer pra enviar um email. SMTP::DEBUG_SERVER é melhor pra ambientes de desenvolvimento.
+
+// o arquivo 'contents.html' deve existir na pasta onde ta o arquivo desse codigo, q é onde vai ter o corpo dessa página.
+
+// altbody é alternative body, texto alternativo se o principal, q é dentro do contents.html, n funcionar
+
+?> 
